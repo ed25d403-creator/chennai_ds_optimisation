@@ -1,0 +1,6 @@
+streamlit>=1.38.0
+ortools>=9.10.4067
+numpy>=1.26.0
+pandas>=2.2.0
+pydeck>=0.9.1
+plotly>=5.22.0
