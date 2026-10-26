@@ -622,58 +622,52 @@ with tab2:
 # TAB 3: MODEL FORMULATION, CODE ARCHITECTURE & README
 # -----------------------------------------------------------------------------
 with tab3:
-    st.header("Technical Documentation and Model Formulation")
+    st.subheader("Technical Documentation and Model Formulation")
 
     st.markdown(
         """
-        ### 1. Problem Background and Modeling Transition
+        **1. Problem Background and Modeling Transition**  
         In standard unconstrained location models, demand is fully satisfied, and objective functions focus exclusively on cost minimization. 
         However, introducing strict operational constraints—such as a maximum delivery radius ($D_{\\max}$) or a cap on facility openings ($K$)—creates potential infeasibility if demand is rigidly enforced. 
         
         To resolve this, the model transitions from pure cost minimization to a **Profit Maximization Framework**, allowing partial demand fulfillment where necessary while accounting for gross order margins, distance-dependent transport expenses, and facility fixed costs.
-        """
-    )
+        
+        ---
+        **2. Mathematical Programming Formulation (MILP)**  
 
-    st.markdown(
-        """
-        ### 2. Mathematical Programming Formulation (MILP)
+        **Sets and Indices**  
+        - $I$: Set of customer demand locations, indexed by $i$.  
+        - $J$: Set of candidate dark store locations, indexed by $j$.  
 
-        #### Sets and Indices
-        - $I$: Set of customer demand locations, indexed by $i$.
-        - $J$: Set of candidate dark store locations, indexed by $j$.
+        **Parameters**  
+        - $D_i$: Daily order demand at customer location $i$.  
+        - $C_j$: Maximum daily processing capacity of candidate dark store $j$.  
+        - $F_j$: Daily fixed operating cost of dark store $j$.  
+        - $d_{ij}$: Great-circle Haversine distance in kilometers between customer $i$ and store $j$.  
+        - $D_{\\max}$: Maximum allowable service distance threshold.  
+        - $c_{\\text{km}}$: Unit transportation cost per kilometer per order.  
+        - $R$: Gross revenue margin per fulfilled order.  
+        - $K$: Maximum permitted number of open dark stores.  
 
-        #### Parameters
-        - $D_i$: Daily order demand at customer location $i$.
-        - $C_j$: Maximum daily processing capacity of candidate dark store $j$.
-        - $F_j$: Daily fixed operating cost of dark store $j$.
-        - $d_{ij}$: Great-circle Haversine distance in kilometers between customer $i$ and store $j$.
-        - $D_{\\max}$: Maximum allowable service distance threshold.
-        - $c_{\\text{km}}$: Unit transportation cost per kilometer per order.
-        - $R$: Gross revenue margin per fulfilled order.
-        - $K$: Maximum permitted number of open dark stores.
+        **Decision Variables**  
+        - $y_j \\in \\{0, 1\\}$: Binary variable equal to 1 if dark store $j$ is opened, and 0 otherwise.  
+        - $x_{ij} \\ge 0$: Continuous variable representing the volume of daily demand for customer $i$ served by store $j$.  
 
-        #### Decision Variables
-        - $y_j \\in \\{0, 1\\}$: Binary variable equal to 1 if dark store $j$ is opened, and 0 otherwise.
-        - $x_{ij} \\ge 0$: Continuous variable representing the volume of daily demand for customer $i$ served by store $j$.
-
-        #### Objective Function
+        **Objective Function**  
         $$\\text{Maximize } Z = \\sum_{i \\in I} \\sum_{j \\in J} \\left( R - c_{\\text{km}} \\cdot d_{ij} \\right) x_{ij} - \\sum_{j \\in J} F_j y_j$$
 
-        #### Constraints
-        1. **Demand Limit:** Fulfillment for any customer cannot exceed their total daily demand.
-           $$\\sum_{j \\in J} x_{ij} \\le D_i \\quad \\forall i \\in I$$
-        2. **Facility Capacity:** Total assigned volume cannot exceed store capacity when open, and must be zero when closed.
-           $$\\sum_{i \\in I} x_{ij} \\le C_j \\cdot y_j \\quad \\forall j \\in J$$
-        3. **Maximum Service Distance:** Deliveries are prohibited if the distance exceeds the threshold.
-           $$x_{ij} = 0 \\quad \\forall i \\in I, \\forall j \\in J \\text{ such that } d_{ij} > D_{\\max}$$
-        4. **Facility Opening Cap:** Limits the total number of operational facilities.
-           $$\\sum_{j \\in J} y_j \\le K$$
-        """
-    )
+        **Constraints**  
+        1. **Demand Limit:** Fulfillment for any customer cannot exceed their total daily demand.  
+           $$\\sum_{j \\in J} x_{ij} \\le D_i \\quad \\forall i \\in I$$  
+        2. **Facility Capacity:** Total assigned volume cannot exceed store capacity when open, and must be zero when closed.  
+           $$\\sum_{i \\in I} x_{ij} \\le C_j \\cdot y_j \\quad \\forall j \\in J$$  
+        3. **Maximum Service Distance:** Deliveries are prohibited if the distance exceeds the threshold.  
+           $$x_{ij} = 0 \\quad \\forall i \\in I, \\forall j \\in J \\text{ such that } d_{ij} > D_{\\max}$$  
+        4. **Facility Opening Cap:** Limits the total number of operational facilities.  
+           $$\\sum_{j \\in J} y_j \\le K$$  
 
-    st.markdown(
-        """
-        ### 3. Computational Implementation and Optimization Strategy
+        ---
+        **3. Computational Implementation and Optimization Strategy**  
         When scaling to 10,000 customers and 50 candidate stores, instantiating every customer-store pair creates 500,000 continuous variables, which degrades solver efficiency. 
 
         To maintain rapid execution times, the implementation utilizes **Sparse Variable Indexing**. By calculating the distance matrix beforehand and instantiating $x_{ij}$ variables strictly for pairs where $d_{ij} \\le D_{\\max}$, the variable count is reduced by over 90%. This allows the Google OR-Tools SCIP solver to return optimal solutions within seconds.
